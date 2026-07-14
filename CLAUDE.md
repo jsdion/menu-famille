@@ -1,8 +1,9 @@
 # Menu famille — planification de repas (28 soupers)
 
-Application autonome de planification de repas familiale : un seul fichier HTML
-(`20260714_menu_famille_v10.html`, ~460 Ko), vanilla JS, données dans
-localStorage. Utilisée sur deux iPhones (l'utilisateur et sa conjointe).
+Application autonome de planification de repas familiale : un fichier HTML
+principal (`index.html`, ~460 Ko), vanilla JS, données dans localStorage.
+PWA : `manifest.webmanifest`, `sw.js` (service worker), `icons/`. Utilisée sur
+deux iPhones (l'utilisateur et sa conjointe).
 L'utilisateur n'est pas développeur professionnel : expliquer les choix
 techniques au fur et à mesure, en termes accessibles.
 
@@ -19,17 +20,23 @@ techniques au fur et à mesure, en termes accessibles.
    **par position**. Tout décalage corrompt silencieusement les liens
    ingrédient ↔ ligne d'épicerie.
 
-2. **Incrémenter `DATA_VERSION`** (const en début de section STATE & STORAGE,
+2. **Incrémenter `CACHE_VERSION`** (const en tête de `sw.js`) à chaque
+   publication d'une nouvelle version de l'app, sinon les téléphones gardent
+   l'ancienne copie en cache hors-ligne.
+
+3. **Incrémenter `DATA_VERSION`** (const en début de section STATE & STORAGE,
    valeur actuelle : 10) à chaque modification de `SEED_DATA`. C'est ce qui
    déclenche la migration du contenu graine sur les téléphones déjà installés
    sans perdre les données personnelles.
 
-3. **Tout le contenu est en français**, orthographe rectifiée de 1990 :
+4. **Tout le contenu est en français**, orthographe rectifiée de 1990 :
    « maitrise », « cout », « ile », etc. (pas d'accent circonflexe sur i/u).
    Cela vaut pour l'interface, les messages d'erreur, les commentaires de code
    et les textes de commit.
 
-4. **Garder l'app utilisable comme fichier unique** le plus longtemps
+5. **Garder l'app utilisable comme fichier unique** (`index.html` ouvert
+   directement doit rester fonctionnel — le service worker ne s'active que
+   servi par https ou localhost) le plus longtemps
    possible. N'éclater en plusieurs fichiers que quand c'est indispensable
    (ex. : manifest.json et service worker pour la PWA), et faire en sorte que
    le HTML seul reste fonctionnel en ouverture directe.

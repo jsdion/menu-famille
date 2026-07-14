@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Menu Famille">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Menu Famille — 28 soupers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3558,6 +3560,18 @@ function render() {
 loadState();
 STATE.tab = 'home';
 render();
+
+// =================== PWA : SERVICE WORKER ===================
+// Actif seulement quand l'app est servie par un serveur (https ou localhost).
+// Ouvert directement en fichier, index.html reste pleinement fonctionnel :
+// ce bloc ne fait alors simplement rien.
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .catch(err => console.error('Service worker :', err));
+  });
+}
 
 </script>
 </body>

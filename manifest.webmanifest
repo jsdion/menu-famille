@@ -1,0 +1,15 @@
+{
+  "name": "Menu famille",
+  "short_name": "Menu famille",
+  "description": "Planification de 28 soupers en famille : recettes, calendrier et liste d'épicerie.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF5E9",
+  "theme_color": "#2E5F4F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

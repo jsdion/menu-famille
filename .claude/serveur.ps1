@@ -11,7 +11,7 @@ while ($listener.IsListening) {
   try {
     $ctx = $listener.GetContext()
     $path = [System.Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
-    if ([string]::IsNullOrEmpty($path)) { $path = '20260714_menu_famille_v10.html' }
+    if ([string]::IsNullOrEmpty($path)) { $path = 'index.html' }
     $file = Join-Path $root $path
     $full = [System.IO.Path]::GetFullPath($file)
     if ((Test-Path $full -PathType Leaf) -and $full.StartsWith($root)) {
