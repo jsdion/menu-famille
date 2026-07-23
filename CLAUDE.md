@@ -55,14 +55,26 @@ techniques au fur et à mesure, en termes accessibles.
 
 ## Feuille de route convenue (2026-07-14)
 
-1. Export/import JSON de toutes les clés `mf:*` avec partage via la feuille
-   iOS (Web Share API) — filet de sécurité avant le reste.
-2. PWA : manifest.json, service worker (cache hors-ligne), icônes, structure
-   de projet simple.
-3. Synchro à deux via Supabase (palier gratuit) : table clé-valeur par foyer,
-   horodatage par clé (last-write-wins), auth par code partagé simple,
-   Supabase Realtime pour les coches d'épicerie en direct.
-4. Déploiement gratuit (Vercel ou GitHub Pages).
+1. ✅ Export/import JSON de toutes les clés `mf:*` avec partage via la feuille
+   iOS (Web Share API) — filet de sécurité avant le reste. (2026-07-23)
+2. ✅ PWA : manifest.webmanifest, service worker (cache hors-ligne), icônes.
+   (2026-07-23)
+3. ✅ Déploiement GitHub Pages (étape faite avant la synchro, d'un commun
+   accord, pour tester sur les iPhones). (2026-07-23)
+4. À faire — synchro à deux via Supabase (palier gratuit) : table clé-valeur
+   par foyer, horodatage par clé (last-write-wins), auth par code partagé
+   simple, Supabase Realtime pour les coches d'épicerie en direct.
+
+## Déploiement
+
+- Dépôt public : https://github.com/jsdion/menu-famille (compte `jsdion`).
+- Site : https://jsdion.github.io/menu-famille/ — GitHub Pages, branche
+  `master`, racine.
+- Publier une nouvelle version = incrémenter `CACHE_VERSION` dans `sw.js`
+  (+ `DATA_VERSION` si `SEED_DATA` a changé), commit, `git push`. Pages
+  reconstruit en une à deux minutes.
+- GitHub CLI (`gh`) installé et authentifié sur la machine
+  (`C:\Program Files\GitHub CLI\gh.exe`).
 
 ## Développement local
 
