@@ -25,7 +25,7 @@ techniques au fur et à mesure, en termes accessibles.
    l'ancienne copie en cache hors-ligne.
 
 3. **Incrémenter `DATA_VERSION`** (const en début de section STATE & STORAGE,
-   valeur actuelle : 10) à chaque modification de `SEED_DATA`. C'est ce qui
+   valeur actuelle : 11) à chaque modification de `SEED_DATA`. C'est ce qui
    déclenche la migration du contenu graine sur les téléphones déjà installés
    sans perdre les données personnelles.
 
@@ -52,6 +52,16 @@ techniques au fur et à mesure, en termes accessibles.
 - Page « Réglages » : fonction de rendu vers la ligne 2928 — emplacement
   naturel pour les nouvelles options (sauvegarde, synchro…).
 - Liens ingrédients ↔ épicerie : `ING_LINKS[jour][indexIngrédient] = idÉpicerie`.
+- Retirer une ligne d'épicerie : mettre son champ `"c"` (catégorie) à `""` dans
+  `SEED_DATA` — l'affichage l'ignore (`weekShoppingItems`) et les ids ne bougent
+  pas. Ne JAMAIS supprimer l'entrée. Ajouter une ligne : uniquement en FIN de
+  liste (S1-99, S2-86 à 91, S3-88/89, S4-100 ajoutés ainsi, audit 2026-07-23).
+- `SHARED_CONTRIB` (quantités partagées par jour, vers la ligne 2501) est
+  indexée par le **libellé exact** (`a`) des lignes d'épicerie : si on modifie
+  un libellé, mettre à jour la clé correspondante.
+- Un ingrédient ne peut porter qu'UN lien : pour les composites (« Vinaigrette
+  dijonnaise »), le lien pointe vers le composant le plus spécifique; les
+  autres composants restent seulement mentionnés dans le libellé d'épicerie.
 
 ## Feuille de route convenue (2026-07-14)
 
