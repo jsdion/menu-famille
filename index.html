@@ -726,17 +726,21 @@ button.card:active { transform: scale(0.985); }
 
 
 /* ---- Drag & drop calendrier ---- */
-.cal-cell.draggable { cursor: grab; touch-action: none; }
 .cal-cell.dragging { opacity: 0.4; }
+/* Ligne d'insertion : montre exactement où la recette sera déposée */
+.cal-drop-line { height: 3px; background: var(--primary); border-radius: 2px; margin: 3px 2px; pointer-events: none; }
 .cal-ghost {
   position: fixed; z-index: 1000; pointer-events: none;
   background: var(--surface); border: 2px solid var(--primary);
   border-radius: 10px; padding: 8px 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   font-size: 12px; max-width: 200px; opacity: 0.95;
 }
-.cal-cell.drop-target { outline: 2px dashed var(--accent); outline-offset: -2px; background: var(--accent-soft); }
-.cal-week.drop-week > .shop-cat-title { color: var(--accent); }
 .drag-hint { font-size: 11px; color: var(--muted); font-style: italic; padding: 2px 4px 8px; }
+.toast-btn {
+  margin-left: 12px; background: none; border: none; cursor: pointer;
+  color: white; font-weight: 700; font-size: 13px; font-family: inherit;
+  text-decoration: underline; text-underline-offset: 2px;
+}
 
 
 .inst-sub {
@@ -875,7 +879,13 @@ button.card:active { transform: scale(0.985); }
 .cal-week { margin-bottom: 20px; }
 .cal-list { display: flex; flex-direction: column; gap: 8px; min-height: 44px; border-radius: 12px; }
 .cal-cell-header { display: flex; align-items: center; gap: 6px; }
-.cal-drag-handle { margin-left: auto; color: var(--muted); font-size: 14px; line-height: 1; cursor: grab; user-select: none; }
+/* Poignée de déplacement : seule zone qui déclenche le glissement (le reste
+   de la carte défile normalement). Zone de contact élargie pour le pouce. */
+.cal-drag-handle {
+  margin: -10px -10px -6px auto; padding: 10px 12px;
+  color: var(--muted); font-size: 18px; line-height: 1;
+  cursor: grab; user-select: none; touch-action: none;
+}
 .cal-cell.today .cal-drag-handle { color: rgba(255,255,255,0.7); }
 .cal-recipe-title { font-family: var(--serif); font-size: 13px; line-height: 1.3; }
 
@@ -1440,6 +1450,13 @@ function toast(msg) {
   const t = el('div', { class: 'toast' }, msg);
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2000);
+}
+// Toast avec bouton d'action (ex. « Annuler ») : reste affiché 6 secondes.
+function toastAction(msg, btnLabel, fn) {
+  const t = el('div', { class: 'toast' }, msg);
+  t.appendChild(el('button', { class: 'toast-btn', onclick: () => { t.remove(); fn(); } }, btnLabel));
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 6000);
 }
 
 // =================== SMART SCALING ===================
@@ -2812,8 +2829,8 @@ function renderCalendar() {
   main.innerHTML = '';
   const view = el('div', { class: 'view' });
   view.appendChild(el('h1', { class: 'page-title' }, 'Calendrier'));
-  view.appendChild(el('div', { class: 'page-subtitle' }, 'Touchez un jour pour changer la recette · glissez une carte pour la déplacer'));
-  view.appendChild(el('div', { class: 'drag-hint' }, 'Astuce : maintenez une carte puis glissez-la vers une autre semaine ou une autre position. L\'épicerie suit automatiquement.'));
+  view.appendChild(el('div', { class: 'page-subtitle' }, 'Touchez un jour pour changer la recette · glissez par la poignée ⠿ pour déplacer'));
+  view.appendChild(el('div', { class: 'drag-hint' }, 'Astuce : saisissez la poignée ⠿ d\'une carte et glissez — la ligne verte montre où elle tombera. L\'épicerie suit automatiquement.'));
 
   for (let w = 1; w <= 4; w++) {
     const block = el('div', { class: 'cal-week', 'data-week': w });
@@ -2839,7 +2856,7 @@ function renderCalendar() {
       cell.appendChild(header);
       cell.appendChild(el('div', { class: 'cal-recipe-title' }, r.title));
       if (skip) cell.appendChild(el('div', { class: 'cal-status-tag', style: isToday ? 'color: rgba(255,255,255,0.7);' : '' }, skip.reason));
-      attachDrag(cell, r.day);
+      attachDrag(handle, cell, r.day);
       listWrap.appendChild(cell);
     });
     block.appendChild(listWrap);
@@ -2850,39 +2867,49 @@ function renderCalendar() {
 }
 
 // ---- Glisser-déposer (Pointer Events : marche au tactile et à la souris) ----
-const DRAG = { active: false, day: null, ghost: null, moved: false, startX: 0, startY: 0 };
+// Le glissement démarre UNIQUEMENT depuis la poignée ⠿ : le reste de la carte
+// défile normalement. Une ligne d'insertion montre exactement où la recette
+// atterrira (le dépôt utilise le même calcul que la ligne). Un toast permet
+// d'annuler le déplacement pendant 6 secondes.
+const DRAG = { active: false, day: null, ghost: null, line: null, moved: false, startX: 0, startY: 0, lastX: 0, lastY: 0, scrollTimer: null };
 
-function attachDrag(cell, day) {
-  cell.addEventListener('pointerdown', (e) => {
+function attachDrag(handle, cell, day) {
+  // Un simple toucher de la poignée ne doit pas ouvrir la fiche du jour.
+  handle.addEventListener('click', (e) => e.stopPropagation());
+  handle.addEventListener('pointerdown', (e) => {
     // Ignorer le clic droit
     if (e.button && e.button !== 0) return;
+    e.preventDefault();
     DRAG.active = false; DRAG.moved = false;
     DRAG.day = day; DRAG.startX = e.clientX; DRAG.startY = e.clientY;
-    DRAG.pending = cell;
     const onMove = (ev) => {
+      DRAG.lastX = ev.clientX; DRAG.lastY = ev.clientY;
       const dx = ev.clientX - DRAG.startX, dy = ev.clientY - DRAG.startY;
-      if (!DRAG.active && Math.hypot(dx, dy) > 8) {
+      if (!DRAG.active && Math.hypot(dx, dy) > 3) {
         // Démarrer le glissement
         DRAG.active = true; DRAG.moved = true;
-        cell.setPointerCapture && cell.setPointerCapture(ev.pointerId);
+        try { handle.setPointerCapture && handle.setPointerCapture(ev.pointerId); } catch {}
         cell.classList.add('dragging');
         DRAG.ghost = el('div', { class: 'cal-ghost' }, cell.querySelector('.cal-recipe-title').textContent);
         document.body.appendChild(DRAG.ghost);
+        DRAG.line = el('div', { class: 'cal-drop-line' });
+        startAutoScroll();
       }
       if (DRAG.active) {
         ev.preventDefault();
         positionGhost(ev.clientX, ev.clientY);
-        highlightDropTarget(ev.clientX, ev.clientY);
+        showDropLine(ev.clientX, ev.clientY);
       }
     };
     const onUp = (ev) => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
+      stopAutoScroll();
       if (DRAG.active) { finishDrag(ev.clientX, ev.clientY); }
       cell.classList.remove('dragging');
       if (DRAG.ghost) { DRAG.ghost.remove(); DRAG.ghost = null; }
-      clearDropHighlights();
+      if (DRAG.line) { DRAG.line.remove(); DRAG.line = null; }
       DRAG.active = false;
       // réinitialiser moved après le cycle de clic
       setTimeout(() => { DRAG.moved = false; }, 0);
@@ -2899,56 +2926,82 @@ function positionGhost(x, y) {
   DRAG.ghost.style.top = (y + 12) + 'px';
 }
 
-function elementsUnder(x, y) {
-  const cell = document.elementFromPoint(x, y);
-  return cell ? cell.closest('.cal-cell') : null;
-}
-function weekUnder(x, y) {
+// Cible d'insertion : { list, beforeCell } — beforeCell est la carte devant
+// laquelle insérer (null = fin de la liste). Moitié haute d'une carte
+// survolée = au-dessus d'elle, moitié basse = en dessous.
+function computeDrop(x, y) {
   const node = document.elementFromPoint(x, y);
-  const wkEl = node ? node.closest('.cal-list') : null;
-  return wkEl ? parseInt(wkEl.getAttribute('data-week')) : null;
-}
-
-function clearDropHighlights() {
-  document.querySelectorAll('.cal-cell.drop-target').forEach(n => n.classList.remove('drop-target'));
-  document.querySelectorAll('.cal-week.drop-week').forEach(n => n.classList.remove('drop-week'));
-}
-
-function highlightDropTarget(x, y) {
-  clearDropHighlights();
-  const over = elementsUnder(x, y);
-  if (over && parseInt(over.getAttribute('data-day')) !== DRAG.day) {
-    over.classList.add('drop-target');
-  } else {
-    const wk = weekUnder(x, y);
-    if (wk) { const blk = document.querySelector(`.cal-week[data-week="${wk}"]`); if (blk) blk.classList.add('drop-week'); }
+  if (!node) return null;
+  const cell = node.closest('.cal-cell');
+  if (cell) {
+    const list = cell.closest('.cal-list');
+    const rect = cell.getBoundingClientRect();
+    if (y < rect.top + rect.height / 2) return { list, beforeCell: cell };
+    let next = cell.nextElementSibling;
+    while (next && !next.classList.contains('cal-cell')) next = next.nextElementSibling;
+    return { list, beforeCell: next };
   }
+  const wkBlock = node.closest('.cal-week');
+  if (wkBlock) return { list: wkBlock.querySelector('.cal-list'), beforeCell: null };
+  return null;
+}
+
+function showDropLine(x, y) {
+  if (!DRAG.line) return;
+  const drop = computeDrop(x, y);
+  if (!drop || !drop.list) { DRAG.line.remove(); return; }
+  if (drop.beforeCell) drop.list.insertBefore(DRAG.line, drop.beforeCell);
+  else drop.list.appendChild(DRAG.line);
+}
+
+// Défilement automatique quand le doigt approche du haut ou du bas de
+// l'écran pendant un glissement (sinon impossible d'atteindre une semaine
+// éloignée sans lâcher la carte).
+function startAutoScroll() {
+  stopAutoScroll();
+  DRAG.scrollTimer = setInterval(() => {
+    if (!DRAG.active) return;
+    const marge = 90, vitesseMax = 14, h = window.innerHeight;
+    let dy = 0;
+    if (DRAG.lastY < marge) dy = -Math.ceil((marge - DRAG.lastY) / marge * vitesseMax);
+    else if (DRAG.lastY > h - marge) dy = Math.ceil((DRAG.lastY - (h - marge)) / marge * vitesseMax);
+    if (dy) {
+      window.scrollBy(0, dy);
+      showDropLine(DRAG.lastX, DRAG.lastY);
+    }
+  }, 16);
+}
+function stopAutoScroll() {
+  if (DRAG.scrollTimer) { clearInterval(DRAG.scrollTimer); DRAG.scrollTimer = null; }
 }
 
 function finishDrag(x, y) {
   const dragged = STATE.recipes.find(r => r.day === DRAG.day);
-  if (!dragged) return;
-  const over = elementsUnder(x, y);
-  const targetWeek = weekUnder(x, y);
-  if (over && parseInt(over.getAttribute('data-day')) !== DRAG.day) {
-    // Déposé sur une carte : insérer juste avant elle (même semaine que la cible)
-    const targetDay = parseInt(over.getAttribute('data-day'));
-    const target = STATE.recipes.find(r => r.day === targetDay);
-    if (target) {
-      dragged.week = target.week;
-      reorderInsertBefore(dragged, target);
-    }
-  } else if (targetWeek) {
-    // Déposé dans une zone de semaine (à la fin)
-    dragged.week = targetWeek;
-    const inWeek = recipesInWeek(targetWeek).filter(r => r.day !== dragged.day);
-    dragged.ord = inWeek.length ? Math.max(...inWeek.map(r => r.ord)) + 1 : dragged.day;
+  const drop = computeDrop(x, y);
+  if (!dragged || !drop || !drop.list) return;
+  const wk = parseInt(drop.list.getAttribute('data-week'));
+  if (!wk) return;
+  const beforeDay = drop.beforeCell ? parseInt(drop.beforeCell.getAttribute('data-day')) : null;
+  if (beforeDay === dragged.day) return; // déposé sur sa propre position
+  // Instantané des positions pour pouvoir annuler
+  const avant = STATE.recipes.map(r => ({ id: r.id, week: r.week, ord: r.ord }));
+  dragged.week = wk;
+  if (beforeDay) {
+    const target = STATE.recipes.find(r => r.day === beforeDay);
+    if (target) reorderInsertBefore(dragged, target);
   } else {
-    return; // rien de valide
+    // Déposé en fin de semaine
+    const inWeek = recipesInWeek(wk).filter(r => r.day !== dragged.day);
+    dragged.ord = inWeek.length ? Math.max(...inWeek.map(r => r.ord)) + 1 : dragged.day;
   }
   normalizeOrds();
   persist('recipes');
   render();
+  toastAction('Recette déplacée', 'Annuler', () => {
+    avant.forEach(s => { const r = STATE.recipes.find(x => x.id === s.id); if (r) { r.week = s.week; r.ord = s.ord; } });
+    persist('recipes');
+    render();
+  });
 }
 
 function reorderInsertBefore(dragged, target) {
