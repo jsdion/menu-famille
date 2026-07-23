@@ -500,6 +500,27 @@ button.card:active { transform: scale(0.985); }
 }
 .tab-row::-webkit-scrollbar { display: none; }
 
+/* Matériel (fiche recette) : bouton dépliant + pastilles d'appareils */
+.mat-btn {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  width: 100%; margin: 0 0 12px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--divider);
+  border-radius: 12px; cursor: pointer; font-family: inherit;
+  font-size: 13px; color: var(--text); text-align: left;
+}
+.mat-btn-label { font-weight: 600; }
+.mat-chip {
+  background: var(--accent-soft); color: var(--accent);
+  border-radius: 999px; padding: 2px 9px; font-size: 12px; font-weight: 500;
+}
+.mat-arrow { margin-left: auto; color: var(--muted); transition: transform .15s; }
+.mat-arrow.open { transform: rotate(180deg); }
+.mat-card { margin-bottom: 12px; }
+.mat-list { list-style: none; margin: 0; padding: 0; }
+.mat-list li { padding: 5px 0; font-size: 13px; border-bottom: 1px solid var(--divider); }
+.mat-list li:last-child { border-bottom: none; }
+.mat-list li.mat-imp { color: var(--accent); font-weight: 600; }
+
 /* Ingredients list */
 .ing-list-break { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--divider); }
 .ing-hint { font-size: 11px; color: var(--muted); font-style: italic; margin-bottom: 10px; }
@@ -2260,6 +2281,29 @@ function renderDetail() {
   });
   view.appendChild(tabRow);
 
+  // Matériel : bouton dépliant sous les onglets (recettes graines seulement).
+  // Les appareils à ne pas rater restent visibles en permanence sur le bouton.
+  const mat = !r.custom && MATERIEL[r.day];
+  if (mat && (tab === 'ing' || tab === 'inst')) {
+    const matOpen = !!STATE.view.matOpen;
+    const matBtn = el('button', {
+      class: 'mat-btn',
+      onclick: () => { STATE.view.matOpen = !matOpen; renderDetail(); }
+    });
+    matBtn.appendChild(el('span', { class: 'mat-btn-label' }, 'Matériel'));
+    mat.a.forEach(x => matBtn.appendChild(el('span', { class: 'mat-chip' }, x)));
+    matBtn.appendChild(el('span', { class: 'mat-arrow' + (matOpen ? ' open' : '') }, '▾'));
+    view.appendChild(matBtn);
+    if (matOpen) {
+      const matCard = el('div', { class: 'card mat-card' });
+      const ul = el('ul', { class: 'mat-list' });
+      mat.a.forEach(x => ul.appendChild(el('li', { class: 'mat-imp' }, x)));
+      mat.m.forEach(x => ul.appendChild(el('li', {}, x)));
+      matCard.appendChild(ul);
+      view.appendChild(matCard);
+    }
+  }
+
   // Tab content
   if (tab === 'ing') {
     const card = el('div', { class: 'card' });
@@ -2558,6 +2602,41 @@ function computeSharedQty(item, relDays) {
 }
 
 const ING_LINKS = {"1":{"0":"S1-0","2":"S1-75","3":"S1-80","7":"S1-61","8":"S1-96","11":"S1-20","16":"S1-24","17":"S1-17","18":"S1-67","19":"S1-10","22":"S1-77","23":"S1-75"},"2":{"0":"S1-1","2":"S1-15","4":"S1-47","8":"S1-22","10":"S1-89","11":"S1-90","13":"S1-21","15":"S1-23","16":"S1-70","17":"S1-68","18":"S1-11","21":"S1-15","22":"S1-80","23":"S1-76"},"3":{"0":"S1-2","2":"S1-82","3":"S1-86","4":"S1-73","7":"S1-29","11":"S1-25","12":"S1-30","14":"S1-82","15":"S1-83","16":"S1-76","17":"S1-84","19":"S1-86","21":"S1-62","24":"S1-97","26":"S1-98","10":"S1-21"},"4":{"0":"S1-3","3":"S1-15","4":"S1-48","7":"S1-51","9":"S1-31","10":"S1-32","12":"S1-94","13":"S1-59","17":"S1-78","19":"S1-33","20":"S1-31","24":"S1-34","25":"S1-11","27":"S1-15"},"5":{"2":"S1-25","3":"S1-26","6":"S1-91","7":"S1-90","8":"S1-89","9":"S1-92","11":"S1-52","12":"S1-53","13":"S1-54","15":"S1-55","16":"S1-56","17":"S1-57","18":"S1-59","19":"S1-88","21":"S1-12","22":"S1-19","23":"S1-49","24":"S1-13","25":"S1-16","27":"S1-64","28":"S1-65","29":"S1-87","34":"S1-6","36":"S1-23","37":"S1-18","38":"S1-12","39":"S1-69","33":"S1-7","40":"S1-79"},"6":{"0":"S1-4","3":"S1-58","4":"S1-35","7":"S1-92","10":"S1-63","12":"S1-8","14":"S1-50","15":"S1-14","16":"S1-11","17":"S1-93","19":"S1-36","24":"S1-37","25":"S1-38","26":"S1-39","27":"S1-67","28":"S1-74","5":"S1-15","11":"S1-7","22":"S1-99"},"7":{"0":"S1-5","5":"S1-45","7":"S1-57","9":"S1-95","11":"S1-60","12":"S1-85","13":"S1-81","14":"S1-94","15":"S1-50","17":"S1-31","18":"S1-43","19":"S1-45","20":"S1-42","22":"S1-63","28":"S1-40","30":"S1-41","23":"S1-44","25":"S1-7","26":"S1-93","31":"S1-78"},"8":{"0":"S2-1","3":"S2-1","4":"S2-16","5":"S2-48","8":"S2-56","9":"S2-35","11":"S2-73","13":"S2-61","14":"S2-62","16":"S2-50","17":"S2-17","18":"S2-34","19":"S2-35","21":"S2-51","22":"S2-47","23":"S2-43","25":"S2-1","26":"S2-16","28":"S2-48","20":"S2-86"},"9":{"0":"S2-8","9":"S2-23","10":"S2-24","11":"S2-22","13":"S2-11","14":"S2-46","17":"S2-33","18":"S2-32","19":"S2-19","20":"S2-20","21":"S2-64","22":"S2-12","25":"S2-59","1":"S2-9","4":"S2-10","15":"S2-87"},"10":{"0":"S2-2","2":"S2-43","3":"S2-44","11":"S2-28","17":"S2-30","23":"S2-31","13":"S2-88","14":"S2-70","26":"S2-90"},"11":{"0":"S2-57","2":"S2-3","5":"S2-13","6":"S2-14","8":"S2-45","9":"S2-46","11":"S2-53","14":"S2-36","15":"S2-74","17":"S2-37","18":"S2-18","19":"S2-63","20":"S2-15","7":"S2-16","21":"S2-76"},"12":{"0":"S2-5","3":"S2-78","4":"S2-79","10":"S2-38","12":"S2-42","15":"S2-30","16":"S2-6","21":"S2-41","23":"S2-72","2":"S2-91","18":"S2-16","22":"S2-91"},"13":{"0":"S2-7","2":"S2-80","4":"S2-82","5":"S2-83","6":"S2-85","7":"S2-27","10":"S2-60","13":"S2-75","16":"S2-81","17":"S2-34","18":"S2-77","20":"S2-83","21":"S2-85","22":"S2-27","23":"S2-68","25":"S2-77","3":"S2-91","26":"S2-84"},"14":{"0":"S2-4","2":"S2-27","3":"S2-69","12":"S2-27","13":"S2-52","14":"S2-73","15":"S2-55","17":"S2-54","18":"S2-21","19":"S2-65","20":"S2-61","22":"S2-44","23":"S2-43","25":"S2-58","28":"S2-66","29":"S2-65","30":"S2-16","32":"S2-40","33":"S2-39","34":"S2-50","36":"S2-71","38":"S2-39","39":"S2-43","40":"S2-16","44":"S2-67","4":"S2-70","5":"S2-89","42":"S2-70","43":"S2-90"},"15":{"0":"S3-9","2":"S3-66","3":"S3-69","5":"S3-74","6":"S3-83","10":"S3-55","12":"S3-23","14":"S3-65","15":"S3-66","18":"S3-24","19":"S3-18","20":"S3-87","24":"S3-85","8":"S3-88","22":"S3-16"},"16":{"0":"S3-1","11":"S3-29","15":"S3-10","18":"S3-56","20":"S3-54","22":"S3-25","26":"S3-27","27":"S3-28","28":"S3-62","29":"S3-11"},"17":{"0":"S3-2","2":"S3-77","3":"S3-76","4":"S3-75","6":"S3-31","10":"S3-31","14":"S3-70","16":"S3-51","17":"S3-76","19":"S3-19","20":"S3-31","21":"S3-22","22":"S3-44","27":"S3-22","28":"S3-31","29":"S3-44","35":"S3-57","37":"S3-12","38":"S3-84","39":"S3-13","40":"S3-17"},"18":{"0":"S3-3","2":"S3-67","3":"S3-59","4":"S3-16","5":"S3-50","6":"S3-45","11":"S3-16","13":"S3-24","14":"S3-34","15":"S3-35","16":"S3-36","20":"S3-64","21":"S3-46","24":"S3-29","25":"S3-20","26":"S3-14","27":"S3-60","28":"S3-72"},"19":{"0":"S3-4","2":"S3-67","3":"S3-68","5":"S3-16","7":"S3-46","11":"S3-21","16":"S3-86","19":"S3-46","22":"S3-37","23":"S3-61"},"20":{"0":"S3-5","2":"S3-6","4":"S3-7","9":"S3-38","11":"S3-75","12":"S3-75","13":"S3-80","16":"S3-82","18":"S3-52","19":"S3-53","21":"S3-45","22":"S3-16","25":"S3-58","29":"S3-16","30":"S3-45","32":"S3-40","33":"S3-41","34":"S3-52","35":"S3-71","14":"S3-89"},"21":{"0":"S3-8","5":"S3-48","12":"S3-31","14":"S3-42","17":"S3-11","20":"S3-43","21":"S3-26","22":"S3-39","23":"S3-31","24":"S3-22","27":"S3-49","28":"S3-79","11":"S3-47"},"22":{"0":"S4-1","5":"S4-67","8":"S4-16","14":"S4-8","16":"S4-18","18":"S4-19","19":"S4-20","20":"S4-22","22":"S4-50","23":"S4-51","27":"S4-74","29":"S4-52"},"23":{"0":"S4-2","1":"S4-3","3":"S4-60","6":"S4-8","7":"S4-88","8":"S4-89","10":"S4-90","17":"S4-56","18":"S4-9","19":"S4-73","20":"S4-74","23":"S4-17","24":"S4-27","29":"S4-28","32":"S4-75","33":"S4-71","37":"S4-58","4":"S4-10","16":"S4-81","26":"S4-10"},"24":{"0":"S4-95","5":"S4-86","10":"S4-8","15":"S4-30","18":"S4-86","23":"S4-54","26":"S4-12","27":"S4-46","30":"S4-61","32":"S4-22","33":"S4-21","35":"S4-47","3":"S4-78","22":"S4-53"},"25":{"0":"S4-4","4":"S4-48","9":"S4-62","13":"S4-15","14":"S4-97","15":"S4-96","17":"S4-47","18":"S4-45","21":"S4-15","27":"S4-32","5":"S4-100"},"26":{"0":"S4-5","2":"S4-73","3":"S4-71","4":"S4-70","5":"S4-76","6":"S4-26","8":"S4-80","10":"S4-33","12":"S4-29","13":"S4-35","19":"S4-36","21":"S4-92","23":"S4-65","26":"S4-98","27":"S4-73","28":"S4-76","29":"S4-71","30":"S4-70","31":"S4-26","34":"S4-67","35":"S4-66","36":"S4-42","37":"S4-46","11":"S4-34"},"27":{"0":"S4-6","2":"S4-82","4":"S4-84","5":"S4-85","6":"S4-86","7":"S4-87","14":"S4-26","17":"S4-57","18":"S4-54","20":"S4-14","21":"S4-85","22":"S4-68","23":"S4-55","25":"S4-46","26":"S4-45","33":"S4-45","34":"S4-14","36":"S4-37","37":"S4-21","40":"S4-99","43":"S4-19","44":"S4-22","45":"S4-21","28":"S4-63"},"28":{"0":"S4-7","5":"S4-14","7":"S4-45","11":"S4-64","12":"S4-57","19":"S4-39","20":"S4-40","22":"S4-49","25":"S4-13","33":"S4-45","36":"S4-41","37":"S4-44","38":"S4-13","29":"S4-43","39":"S4-77"}};
+
+// Matériel par jour (recettes graines) : a = appareils/outils à mettre en
+// évidence sur le bouton, m = matériel courant dans la liste dépliée.
+// Constante séparée de SEED_DATA (comme ING_LINKS) : lue directement au rendu,
+// aucune migration nécessaire.
+const MATERIEL = {
+  1: { a: [], m: ['Four 220 °C', '2 plaques + parchemin', 'Casserole moyenne', 'Passoire fine', 'Grand saladier', 'Petit bol + fouet'] },
+  2: { a: ['Thermomètre (recommandé)'], m: ['Four 220 °C', '2 plaques + parchemin', 'Casserole moyenne', 'Poêle sèche (noix)', 'Zesteur ou râpe fine', 'Presse-ail', 'Tamis', 'Grand saladier'] },
+  3: { a: ['Machine à riz (BROWN)'], m: ['Wok ou grande poêle (fonte/acier)', 'Grande casserole', 'Tamis fin'] },
+  4: { a: [], m: ['Four 200 °C', '2 plaques + parchemin', 'Casserole moyenne', 'Tamis', 'Grand saladier', 'Économe'] },
+  5: { a: [], m: ['Four 200 °C', 'Moule carré 23 cm', 'Grande casserole ou cocotte à fond épais', 'Passoire', 'Grand bol + fouet', 'Râpe', 'Grand saladier'] },
+  6: { a: ['Mandoline (recommandée)'], m: ['Four 190 °C', 'Plat 23 × 33 cm', 'Casserole large', 'Plaque', 'Râpe', 'Grand saladier'] },
+  7: { a: ['Cocotte en fonte 5-6 L'], m: ['Four 160 °C', 'Grande casserole', 'Presse-purée (pas de robot)'] },
+  8: { a: [], m: ['Petite poêle (riz)', 'Grand saladier', 'Fouet', 'Gobelet mesureur'] },
+  9: { a: ['Poêle allant au four 30-32 cm'], m: ['Four', 'Grand bol', 'Saladier', 'Fouet'] },
+  10: { a: ['Thermomètre (recommandé)'], m: ['Four 220 °C', 'Grande plaque + parchemin', 'Poêle en fonte ou inox épais', 'Hachage au couteau (pas de robot)'] },
+  11: { a: [], m: ['Grande casserole 5-6 L', 'Passoire', 'Grand saladier', 'Râpe fine'] },
+  12: { a: ['Thermomètre (recommandé)'], m: ['Four 200 °C', 'Plaque + parchemin', 'Poêle allant au four (saisie puis cuisson)', 'Écumoire', 'Presse-purée (pas de robot)'] },
+  13: { a: ['Machine à riz (SUSHI/WHITE)', 'Mandoline'], m: ['Four en mode BROIL', 'Plaque + papier alu (pas de parchemin!)', 'Casserole', 'Saladier', 'Fouet'] },
+  14: { a: ['Cocotte en fonte 5-6 L + couvercle'], m: ['Poêle sèche (amandes)', 'Râpe', 'Grand bol', 'Fouet'] },
+  15: { a: [], m: ['Grande poêle (pas antiadhésive)', 'Casserole (soba)', 'Poêle ou wok (bok choy)', 'Petite casserole (sauce)', 'Microplane', 'Râpe'] },
+  16: { a: ['Thermomètre (recommandé)'], m: ['Four 200 °C', 'Plaque + parchemin', 'Machine à riz ou casserole à couvercle', '2 poêles', 'Tamis', 'Saladier', 'Fouet'] },
+  17: { a: [], m: ['Four 175 °C (tortillas) ou micro-ondes', 'Grande poêle', 'Casserole', 'Grand bol (guacamole à la fourchette)', 'Râpe'] },
+  18: { a: [], m: ['Four 220 °C', '2 plaques + parchemin', 'Saladier', 'Fouet'] },
+  19: { a: ['Thermomètre (recommandé)'], m: ['Four 220 °C', 'Plaque + parchemin', 'Grande poêle fonte/inox', 'Casserole moyenne', 'Grand bol d\'eau glacée', 'Fouet'] },
+  20: { a: ['Machine à riz (basmati)'], m: ['Grande cocotte à couvercle (5 L min)', 'Saladier', 'Fouet', 'Gobelet mesureur'] },
+  21: { a: ['Thermomètre (requis)'], m: ['Four 200 °C', 'Lèchefrite avec grille', '2 plaques', 'Grille au frigo (repos 12-24 h)'] },
+  22: { a: [], m: ['Four 220 °C', 'Plaque', 'Casserole (œufs)', 'Grande casserole (haricots)', 'Poêle en fonte (thon)', 'Grand plat', 'Bol d\'eau glacée', 'Fouet'] },
+  23: { a: [], m: ['Grande casserole (purée)', 'Casserole à couvercle (chou)', 'Grande poêle', 'Râpe', 'Grand bol', 'Presse-purée (pas de robot)', 'Fouet (roux)'] },
+  24: { a: [], m: ['Grande poêle (service à la poêle)', 'Four 175 °C (pitas)', 'Fouet'] },
+  25: { a: [], m: ['Four 220 °C (asperges)', 'Poêle (peau croustillante)', 'Casserole (quinoa)', 'Plaque + parchemin', 'Tamis fin', 'Fouet'] },
+  26: { a: ['Machine à riz (BROWN)'], m: ['Four 220 °C', '2 plaques + parchemin', 'Linge + poids (presser le tofu)', 'Tamis', 'Râpe (ou robot)', 'Casserole (edamame)', 'Fouet'] },
+  27: { a: ['Cocotte en fonte 5-6 L + couvercle'], m: ['Four 160 °C', 'Grand bol (semoule)', 'Plaque', 'Fouet'] },
+  28: { a: [], m: ['Grande poêle profonde (orzo)', '2e poêle (crevettes)', 'Casserole (haricots)', 'Saladier', 'Fouet'] },
+};
 
 function renderShopping() {
   const main = $('#main');
