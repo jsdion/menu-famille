@@ -25,7 +25,7 @@ techniques au fur et à mesure, en termes accessibles.
    l'ancienne copie en cache hors-ligne.
 
 3. **Incrémenter `DATA_VERSION`** (const en début de section STATE & STORAGE,
-   valeur actuelle : 11) à chaque modification de `SEED_DATA`. C'est ce qui
+   valeur actuelle : 12) à chaque modification de `SEED_DATA`. C'est ce qui
    déclenche la migration du contenu graine sur les téléphones déjà installés
    sans perdre les données personnelles.
 
