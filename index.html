@@ -927,7 +927,7 @@ button.card:active { transform: scale(0.985); }
 }
 .cal-day-label { font-size: 11px; font-weight: 500; color: var(--muted); }
 .cal-cell.today .cal-day-label { color: rgba(255,255,255,0.85); }
-.cal-today-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; }
+.cal-today-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; margin-right: auto; }
 .cal-recipe-title {
   font-family: var(--serif);
   font-weight: 500;
@@ -2855,9 +2855,10 @@ function renderCalendar() {
       });
       const header = el('div', { class: 'cal-cell-header' });
       header.appendChild(el('span', { class: 'cal-day-label' }, `${fmtDateShort(dateForDay(r.day))} · J${r.day}`));
+      // « Auj. » collé à la date : la poignée reste alignée sur toutes les cartes
+      if (isToday) header.appendChild(el('span', { class: 'cal-today-tag' }, 'Auj.'));
       const handle = el('span', { class: 'cal-drag-handle', html: I.grip || '⠿' });
       header.appendChild(handle);
-      if (isToday) header.appendChild(el('span', { class: 'cal-today-tag' }, 'Auj.'));
       cell.appendChild(header);
       cell.appendChild(el('div', { class: 'cal-recipe-title' }, r.title));
       if (skip) cell.appendChild(el('div', { class: 'cal-status-tag', style: isToday ? 'color: rgba(255,255,255,0.7);' : '' }, skip.reason));
