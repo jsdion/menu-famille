@@ -2552,8 +2552,11 @@ function weekShoppingItems(wk) {
       if (!item.cat || item.cat === '⚠ AVIS') return;
       const days = itemDays(item.art);
       if (days.length === 0) {
-        // Staple : rattaché à sa semaine d'origine.
-        if (originWeek === wk) out.push({ item, relDays: [] });
+        // Article de fond (« toute la semaine ») : rattaché à sa semaine
+        // d'origine, mais seulement si au moins une recette de cette semaine
+        // est encore cochée — sinon il ne sert à rien.
+        const uneRecetteCochee = recipesInWeek(wk).some(r => STATE.planSel[r.day] !== false);
+        if (originWeek === wk && uneRecetteCochee) out.push({ item, relDays: [] });
         return;
       }
       // Jours de cet item qui tombent dans la semaine wk ET sont cochés.

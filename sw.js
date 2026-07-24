@@ -2,7 +2,7 @@
 // Les données (localStorage) ne sont pas concernées.
 // Incrémenter CACHE_VERSION à chaque publication d'une nouvelle version
 // pour que les téléphones remplacent proprement l'ancienne copie.
-const CACHE_VERSION = 'mf-cache-v8';
+const CACHE_VERSION = 'mf-cache-v9';
 const ASSETS = [
   './',
   'manifest.webmanifest',
